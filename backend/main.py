@@ -12,29 +12,37 @@ def find_midpoint(point_a, point_b):
         (point_a.y + point_b.y) / 2
     )
 
-def dnc_curve(control_start, control_middle, control_end, depth, max_depth, points_list):
+def dnc_curve(control_points, depth, max_depth, points_list):
     if depth < max_depth:
-        middle_point_1 = find_midpoint(control_start, control_middle)
-        middle_point_2 = find_midpoint(control_middle, control_end)
-        middle_point = find_midpoint(middle_point_1, middle_point_2)
-        depth += 1
+        new_control_points = [control_points[0]]
+        for i in range(len(control_points) - 1):
+            mid_point = find_midpoint(control_points[i], control_points[i + 1])
+            new_control_points.append(mid_point)
+        new_control_points.append(control_points[-1])
 
-        # left
-        dnc_curve(control_start, middle_point_1, middle_point, depth, max_depth, points_list)
+        mid_index = len(new_control_points) // 2
 
-        points_list.append(middle_point)
+        left_points = []
+        right_points = []
 
-        # right
-        dnc_curve(middle_point, middle_point_2, control_end, depth, max_depth, points_list)
+        for i in range(len(new_control_points)):
+            if i <= mid_index:
+                left_points.append(new_control_points[i])
+            if i >= mid_index:
+                right_points.append(new_control_points[i])
 
-def generate_bezier_curve(start_point, control_point, end_point, iterations):
+        dnc_curve(left_points, depth + 1, max_depth, points_list)
+        points_list.append(new_control_points[len(new_control_points) // 2])
+        dnc_curve(right_points, depth + 1, max_depth, points_list)
+
+def generate_bezier_curve(start_point, control_points, end_point, iterations):
     bezier_curve_points = [start_point]
-
-    print(bezier_curve_points)
-    dnc_curve(start_point, control_point, end_point, 0, iterations, bezier_curve_points)
-
+    all_control_points = [start_point] + control_points + [end_point]
+    dnc_curve(all_control_points, 0, iterations, bezier_curve_points)
     bezier_curve_points.append(end_point)
     return bezier_curve_points
+
+print(generate_bezier_curve(Point(0,1), [Point(2,2)], Point(3,1), 2))
 
 # # main
 # start = Point(0, 0)
@@ -48,34 +56,34 @@ def generate_bezier_curve(start_point, control_point, end_point, iterations):
 # for point in bezier_points:
 #     print(f'({point.x}, {point.y})')
 
-def main():
-    print("Enter your start, control, and end points for the Bézier curve:")
+# def main():
+#     print("Enter your start, control, and end points for the Bézier curve:")
 
-    # Input for start point
-    start_input = input("Enter start point as 'x,y': ").strip()
-    start_x, start_y = map(float, start_input.split(','))
-    start_point = Point(start_x, start_y)
+#     # Input for start point
+#     start_input = input("Enter start point as 'x,y': ").strip()
+#     start_x, start_y = map(float, start_input.split(','))
+#     start_point = Point(start_x, start_y)
 
-    # Input for control point
-    control_input = input("Enter control point as 'x,y': ").strip()
-    control_x, control_y = map(float, control_input.split(','))
-    control_point = Point(control_x, control_y)
+#     # Input for control point
+#     control_input = input("Enter control point as 'x,y': ").strip()
+#     control_x, control_y = map(float, control_input.split(','))
+#     control_point = Point(control_x, control_y)
 
-    # Input for end point
-    end_input = input("Enter end point as 'x,y': ").strip()
-    end_x, end_y = map(float, end_input.split(','))
-    end_point = Point(end_x, end_y)
+#     # Input for end point
+#     end_input = input("Enter end point as 'x,y': ").strip()
+#     end_x, end_y = map(float, end_input.split(','))
+#     end_point = Point(end_x, end_y)
 
-    # Input for number of iterations
-    iterations_input = input("Enter the number of iterations for curve refinement: ").strip()
-    iterations = int(iterations_input)
+#     # Input for number of iterations
+#     iterations_input = input("Enter the number of iterations for curve refinement: ").strip()
+#     iterations = int(iterations_input)
 
-    # Generate and print the Bézier curve points
-    bezier_points = generate_bezier_curve(start_point, control_point, end_point, iterations)
-    print("\nThe points on the Bézier curve are:")
-    for point in bezier_points:
-        print(point)
+#     # Generate and print the Bézier curve points
+#     bezier_points = generate_bezier_curve(start_point, control_point, end_point, iterations)
+#     print("\nThe points on the Bézier curve are:")
+#     for point in bezier_points:
+#         print(point)
 
 
-main()
+# main()
 
