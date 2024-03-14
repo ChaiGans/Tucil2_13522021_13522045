@@ -27,9 +27,24 @@ def dnc_curve(control_start, control_middle, control_end, depth, max_depth, poin
         # right
         dnc_curve(middle_point, middle_point_2, control_end, depth, max_depth, points_list)
 
+def dnc_n_curve(control_start, control_points, control_end, depth, max_depth, points_list):
+    if (len(control_points) == 1):
+        dnc_curve(control_start, control_points[0], control_end, depth, max_depth, points_list)
+    else:
+        mid_index = len(control_points)//2
+        dnc_n_curve(control_start, control_points[:mid_index], control_end, depth, max_depth, points_list)
+        dnc_n_curve(control_start, control_points[mid_index+1:], control_end, depth, max_depth, points_list)
+
 def generate_bezier_dnc(start_point, control_points, end_point, iterations):
     bezier_curve_points = [start_point]
     dnc_curve(start_point, control_points, end_point, 0, iterations, bezier_curve_points)
+    bezier_curve_points += [end_point]
+    return bezier_curve_points
+
+def generate_bezier_dnc_n_curve(start_point, control_points, end_point, iterations):
+    bezier_curve_points = [start_point]
+    dnc_n_curve(start_point, control_points, end_point, 0, iterations, bezier_curve_points)
+    bezier_curve_points += [end_point]
     return bezier_curve_points
 
 def generate_bezier_bruteforce(start_point, control_point, end_point, iterations):
@@ -45,8 +60,8 @@ def generate_bezier_bruteforce(start_point, control_point, end_point, iterations
     
     return points
 
-print(generate_bezier_dnc(Point(5,1), Point(2,2), Point(6,6), 3))
-print(generate_bezier_bruteforce(Point(5,1), Point(2,2), Point(6,6), 3))
+print(generate_bezier_dnc_n_curve(Point(5,1), [Point(2,2)], Point(6,6), 4))
+print(generate_bezier_bruteforce(Point(5,1), Point(2,2), Point(6,6), 4))
 
 # def main():
 #     print("Enter start, control, and end points for the Bézier curve:")
