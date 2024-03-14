@@ -35,55 +35,57 @@ def dnc_curve(control_points, depth, max_depth, points_list):
         points_list.append(new_control_points[len(new_control_points) // 2])
         dnc_curve(right_points, depth + 1, max_depth, points_list)
 
-def generate_bezier_curve(start_point, control_points, end_point, iterations):
+def generate_bezier_dnc(start_point, control_points, end_point, iterations):
     bezier_curve_points = [start_point]
     all_control_points = [start_point] + control_points + [end_point]
     dnc_curve(all_control_points, 0, iterations, bezier_curve_points)
     bezier_curve_points.append(end_point)
     return bezier_curve_points
 
-print(generate_bezier_curve(Point(0,1), [Point(2,2)], Point(3,1), 2))
+def generate_bezier_bruteforce(start_point, control_point, end_point, iterations):
+    num_points = 2 ** iterations
+    
+    points = [start_point]
+    for i in range(1, num_points):
+        t = i / num_points
+        x = (1 - t)**2 * start_point.x + 2 * (1 - t) * t * control_point.x + t**2 * end_point.x
+        y = (1 - t)**2 * start_point.y + 2 * (1 - t) * t * control_point.y + t**2 * end_point.y
+        points.append(Point(x, y))
+    points.append(end_point)
+    
+    return points
 
-# # main
-# start = Point(0, 0)
-# control = Point(1, 1)
-# end = Point(3, 0)
-# iterations = 2
+print(generate_bezier_dnc(Point(0,1), [Point(2,2)], Point(3,1), 2))
 
-# # Generate Bezier curve points
-# bezier_points = generate_bezier_curve(start, control, end, iterations)
-# # print(bezier_points)
-# for point in bezier_points:
-#     print(f'({point.x}, {point.y})')
+def main():
+    print("Enter start, control, and end points for the Bézier curve:")
 
-# def main():
-#     print("Enter your start, control, and end points for the Bézier curve:")
+    start_input = input("Enter start point as 'x,y': ").strip()
+    start_x, start_y = map(float, start_input.split(','))
+    start_point = Point(start_x, start_y)
 
-#     # Input for start point
-#     start_input = input("Enter start point as 'x,y': ").strip()
-#     start_x, start_y = map(float, start_input.split(','))
-#     start_point = Point(start_x, start_y)
+    control_input = input("Enter control point as 'x,y': ").strip()
+    control_x, control_y = map(float, control_input.split(','))
+    control_point = Point(control_x, control_y)
 
-#     # Input for control point
-#     control_input = input("Enter control point as 'x,y': ").strip()
-#     control_x, control_y = map(float, control_input.split(','))
-#     control_point = Point(control_x, control_y)
+    end_input = input("Enter end point as 'x,y': ").strip()
+    end_x, end_y = map(float, end_input.split(','))
+    end_point = Point(end_x, end_y)
 
-#     # Input for end point
-#     end_input = input("Enter end point as 'x,y': ").strip()
-#     end_x, end_y = map(float, end_input.split(','))
-#     end_point = Point(end_x, end_y)
+    num_input = int(input("Enter the number of iterations: ").strip())
+    method = input("Choose the method ('dnc' for divide and conquer, 'bf' for brute force): ").strip().lower()
 
-#     # Input for number of iterations
-#     iterations_input = input("Enter the number of iterations for curve refinement: ").strip()
-#     iterations = int(iterations_input)
+    if method == 'dnc':
+        bezier_points = generate_bezier_dnc(start_point, control_point, end_point, num_input)
+    elif method == 'bf':
+        bezier_points = generate_bezier_bruteforce(start_point, control_point, end_point, num_input)
+    else:
+        print("Invalid method. Please enter 'dnc' or 'bf'.")
+        return
 
-#     # Generate and print the Bézier curve points
-#     bezier_points = generate_bezier_curve(start_point, control_point, end_point, iterations)
-#     print("\nThe points on the Bézier curve are:")
-#     for point in bezier_points:
-#         print(point)
+    print("\nThe points on the Bézier curve are:")
+    for point in bezier_points:
+        print(point)
 
-
-# main()
-
+# Run the CLI
+main()
