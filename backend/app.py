@@ -16,7 +16,7 @@ def dnc_beizer_curve():
         return jsonify({"message" : "error caught ini dnc_beizer_curve"})
 
 @app.route('/bruteforce', methods=['POST'])
-def dnc_beizer_curve():
+def bruteforce_beizer_curve():
     try :
         if (request.method == 'POST'):
             data = request.json
