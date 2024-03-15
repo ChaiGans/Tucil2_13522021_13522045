@@ -4,14 +4,6 @@ from matplotlib.animation import FuncAnimation
 from main import generate_bezier_dnc_n_curve, Point
 from tkinter import Tk, Canvas, messagebox
 import tkinter as tk
-from pathlib import Path
-
-OUTPUT_PATH = Path(__file__).parent
-ASSETS_PATH = OUTPUT_PATH / Path(r"C:\Users\User\Documents\ITB\Sem 4\Stima\build\assets\frame0")
-
-
-def relative_to_assets(path: str) -> Path:
-    return ASSETS_PATH / Path(path)
 
 #button
 def on_generate_pressed():
@@ -27,22 +19,19 @@ def on_generate_pressed():
     try:
         points_str = input_points.get().strip()
 
-        if points_str.startswith('(') and points_str.endswith(')'):
-            points_str = points_str[1:-1]
-        else:
-            raise ValueError("Points must be enclosed in parentheses.")
-    
+
+        if not all(s.strip().count(',') == 1 for s in points_str.split('),(')):
+            raise ValueError("Invalid format for points. Format should be (x,y),(x,y),... with no spaces between numbers and commas")
+        
         points_list = [
             Point(
-                float(point_part.split(',')[0].strip()),
-                float(point_part.split(',')[1].strip())
+                float(point_part.split(',')[0].strip(' ()')),
+                float(point_part.split(',')[1].strip(' ()'))
             ) for point_part in points_str.split('),(')
         ]
-        if len(points_list) != num_points:
-            raise ValueError("The number of input points does not match the input.")
         
-        if points_str.count(',') != num_points * 2 - 1 or not all('(' in point and ')' in point for point in points_str.split('),(')):
-            raise ValueError("Invalid format for points. Format should be (1,1),(2,2) (no spaces)")
+        if len(points_list) != num_points:
+            raise ValueError("The number of input points does not match the number specified.")
         
         start_point = points_list[0]
         control_points = points_list[1:-1]
