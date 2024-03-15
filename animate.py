@@ -14,10 +14,10 @@ canvas = tk.Canvas(root, width=canvas_width, height=canvas_height)
 canvas.pack()
 
 # Define control points and number of iterations or points
-start_point = Point(50, 350)
-control_point = [Point(300, 50)]
-end_point = Point(550, 350)
-iterations = 2  # More iterations for a smoother animation
+start_point = Point(5*80,1*80)
+control_point = [Point(2*80,2*80), Point(3*80,3*80)]
+end_point = Point(6*80,6*80)
+iterations = 4  # More iterations for a smoother animation
 
 # Function to draw a point on the canvas
 def draw_point(point, color="black"):
@@ -70,6 +70,7 @@ def animate_bezier_curve():
     
     # Generate Bezier curve points
     bezier_points = generate_bezier_dnc_n_curve(start_point, control_point, end_point, iterations)
+    print(bezier_points)
     
     # Draw the curve point by point
     for i in range(len(bezier_points) - 1):
