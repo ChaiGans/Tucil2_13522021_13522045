@@ -1,12 +1,16 @@
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.animation import FuncAnimation
-from main import generate_bezier_dnc_n_curve, Point
-from tkinter import Tk, Canvas, messagebox
+from main import generate_bezier_dnc_n_curve,generate_bezier_bruteforce, Point
+from tkinter import Tk, Canvas, messagebox, Radiobutton, IntVar
 import tkinter as tk
+import time
+
+def close_window(event=None):
+    window.destroy()
 
 #button
-def on_generate_pressed():
+def generate_button():
     try:
         num_points = int(number_of_points.get())
         if(num_points < 3):
@@ -15,10 +19,9 @@ def on_generate_pressed():
     except ValueError:
         messagebox.showerror("Error", "Number of points must be an integer.")
         return
-
+    
     try:
         points_str = input_points.get().strip()
-
 
         if not all(s.strip().count(',') == 1 for s in points_str.split('),(')):
             raise ValueError("Invalid format for points. Format should be (x,y),(x,y),... with no spaces between numbers and commas")
@@ -55,9 +58,22 @@ def on_generate_pressed():
     ax.set_xlim(x_min - 1, x_max + 1)  # Add some padding
     ax.set_ylim(y_min - 1, y_max + 1)  # Add some padding
 
-    # Generate Bezier curve points
-    bezier_points = generate_bezier_dnc_n_curve(start_point, control_points, end_point, iterations)
-
+    start = time.time()
+    try:
+        if method_var.get() == 1: 
+            if len(points_list) != 3:
+                raise ValueError("Brute force method requires exactly 3 points.")
+            bezier_points = generate_bezier_bruteforce(points_list[0], points_list[1], points_list[2], iterations)
+        else: 
+            bezier_points = generate_bezier_dnc_n_curve(start_point,control_points,end_point ,iterations)
+            print("this is dnc")
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+        return
+    end = time.time()
+    execution_time = int((end - start) * 1000) 
+    execution_time_var.set(f"Execution time : {execution_time :} ms")
+ 
     # Extract x and y coordinates from points
     x_points = [point.x for point in bezier_points]
     y_points = [point.y for point in bezier_points]
@@ -100,7 +116,7 @@ canvas = Canvas(
 
 canvas.place(x = 0, y = 0)
 canvas.create_text(
-    326.0,
+    400.0,
     24.0,
     anchor="nw",
     text="Bezier Curve Generator",
@@ -115,6 +131,15 @@ canvas.create_rectangle(
     573.0,
     fill="#1EFF6A",
     outline="")
+
+
+method_var = tk.IntVar(value=2)  # Default to DNC
+
+# Create radio buttons for method selection
+brute_force_rb = Radiobutton(window, text="Brute Force", variable=method_var, value=1, bg="#000000", fg="#0c88e9",font=("Times New Roman", 20))
+dnc_rb = Radiobutton(window, text="Divide and Conquer", variable=method_var, value=2, bg="#000000", fg="#0c88e9",font=("Times New Roman", 20))
+brute_force_rb.place(x=90.0, y=90.0)
+dnc_rb.place(x=290.0, y=90.0)
 
 # Create 'Number of Points' label and entry
 number_of_points_label = tk.Label(window, text="Number of Points :", bg="#130202", fg="#1EFF6A", font=("Times New Roman", 32 * -1))
@@ -134,19 +159,26 @@ number_of_iterations_label.place(x=98.0, y=354.0)
 number_of_iterations = tk.Entry(window, bg="#1EFF6A",fg="#000000", insertbackground="#000000",font=("Times New Roman", 20))
 number_of_iterations.place(x=98.0, y=403.0, width=377.0, height=52.0)
 
+# Create 'Execution time' label and entry
+execution_time_var = tk.StringVar(window)
+execution_time_var.set("Execution time: ")
+execution_times_label = tk.Label(window,  textvariable=execution_time_var, bg="#130202", fg="#1EFF6A", font=("Times New Roman", 32 * -1))
+execution_times_label.place(x=575.0, y=90.0)
+
 # Create a Matplotlib figure and axes
 fig = Figure()
 ax = fig.add_subplot(111)
 
 canvas = FigureCanvasTkAgg(fig, master=window)
 mpl_canvas_widget = canvas.get_tk_widget()
-mpl_canvas_widget.place(x=580, y=94, width=550, height=479)
+mpl_canvas_widget.place(x=580, y=135, width=550, height=440)
 
 button_border = tk.Frame(window, highlightbackground="#1EFF6A", highlightthickness=2, bd=0)
 button_border.place(x=153.0, y=504.0, width=264.0, height=69.0)
 
-generate_button = tk.Button(button_border, text="Generate", command=on_generate_pressed, bg="#1EFF6A", fg="#000000", font=("Times New Roman", 32))
+generate_button = tk.Button(button_border, text="Generate", command=generate_button, bg="#1EFF6A", fg="#000000", font=("Times New Roman", 32))
 generate_button.pack(expand=True, fill=tk.BOTH)
 
+window.bind('<Escape>', close_window)
 window.resizable(False, False)
 window.mainloop()
