@@ -11,6 +11,8 @@ def close_window(event=None):
 
 #button
 def generate_button():
+    global ani, placeholder_text, execution_time_var, ax, canvas
+
     try:
         num_points = int(number_of_points.get())
         if(num_points < 3):
@@ -51,6 +53,8 @@ def generate_button():
         return
 
     ax.clear()
+    ax.set_title('Bezier Curve Generator')
+    ax.set_axis_on()
 
     all_x = [p.x for p in points_list]
     all_y = [p.y for p in points_list]
@@ -78,30 +82,34 @@ def generate_button():
     # Extract x and y coordinates from points
     x_points = [point.x for point in bezier_points]
     y_points = [point.y for point in bezier_points]
+    bezier_line, = ax.plot([], [], 'b-', label='Bezier Curve', lw=2, marker='o', markersize=5)
 
     # Plot initial control points and lines
     x_control = [p.x for p in [start_point] + control_points + [end_point]]
     y_control = [p.y for p in [start_point] + control_points + [end_point]]
-    ax.plot(x_control, y_control, 'ro--', lw=1)
+    control_line, = ax.plot(x_control, y_control, 'ro--', label='Control Points', lw=1)
 
-    line, = ax.plot([], [], 'b-', lw=2, marker='o', markersize=5)
+    bezier_line, = ax.plot([], [], 'b-', lw=2, marker='o', markersize=5)
 
     def init():
-        line.set_data([], [])
-        return line,
+        bezier_line.set_data([], [])
+        return bezier_line,
 
     def animate(i):
         if i < len(x_points):
             x = x_points[:i+1]
             y = y_points[:i+1]
-            line.set_data(x, y)
-        return line,
+            bezier_line.set_data(x, y)
+        return bezier_line,
 
-    ani = FuncAnimation(fig, animate, init_func=init, frames=len(x_points) + 1, interval=50, blit=True)
+    ani = FuncAnimation(fig, animate, init_func=init, frames=len(x_points) + 1, interval=500, blit=True)
     window.ani = ani
     canvas.draw()
+    ax.legend()
+    placeholder_text.set_visible(False)
 
-# init
+
+# Main application window
 window = Tk()
 window.geometry("1142x618")
 window.configure(bg = "#130202")
@@ -169,6 +177,8 @@ execution_times_label.place(x=575.0, y=90.0)
 # Create a Matplotlib figure and axes
 fig = Figure()
 ax = fig.add_subplot(111)
+ax.set_axis_off()  # Hide axis initially
+placeholder_text = ax.text(0.5, 0.5, "Click 'Generate' to display the Bezier curve", ha='center', va='center', fontsize=12)
 
 canvas = FigureCanvasTkAgg(fig, master=window)
 mpl_canvas_widget = canvas.get_tk_widget()
