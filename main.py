@@ -67,7 +67,7 @@ def generate_button():
             bezier_points = generate_bezier_bruteforce(points_list[0], points_list[1], points_list[2], iterations)
         else: 
             bezier_points = generate_bezier_dnc_n_curve(start_point,control_points,end_point ,iterations)
-            print("this is dnc")
+
     except ValueError as e:
         messagebox.showerror("Error", str(e))
         return
@@ -133,7 +133,6 @@ canvas.create_rectangle(
     573.0,
     fill="#1EFF6A",
     outline="")
-
 
 method_var = tk.IntVar(value=2)  # Default to DNC
 
