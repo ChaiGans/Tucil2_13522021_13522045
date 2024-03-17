@@ -9,36 +9,27 @@ import time
 def close_window(event=None):
     window.destroy()
 
-#button
 def generate_button():
-    global ani, placeholder_text, execution_time_var, ax, canvas
+    global ani, execution_time_var, ax, canvas, bezier_line
 
     try:
         num_points = int(number_of_points.get())
-        if(num_points < 3):
+        if num_points < 3:
             messagebox.showerror("Error", "You must input minimum 3 points.")
             return
     except ValueError:
         messagebox.showerror("Error", "Number of points must be an integer.")
         return
-    
+
     try:
         points_str = input_points.get().strip()
-
         if not all(s.strip().count(',') == 1 for s in points_str.split('),(')):
-            raise ValueError("Invalid format for points." 
-                             "Format should be (x,y),(x,y),... with no spaces between numbers and commas")
-        
-        points_list = [
-            Point(
-                float(point_part.split(',')[0].strip(' ()')),
-                float(point_part.split(',')[1].strip(' ()'))
-            ) for point_part in points_str.split('),(')
-        ]
-        
+            raise ValueError("Invalid format for points. Format should be (x,y),(x,y),... with no spaces between numbers and commas")
+
+        points_list = [Point(float(point_part.split(',')[0].strip(' ()')), float(point_part.split(',')[1].strip(' ()'))) for point_part in points_str.split('),(')]
         if len(points_list) != num_points:
             raise ValueError("The number of input points does not match the number specified.")
-        
+
         start_point = points_list[0]
         control_points = points_list[1:-1]
         end_point = points_list[-1]
@@ -53,61 +44,65 @@ def generate_button():
         return
 
     ax.clear()
-    ax.set_title('Bezier Curve Generator')
+    ax.set_title('Bezier Curve Generator\nIterations more than 4 may take times')
     ax.set_axis_on()
 
     all_x = [p.x for p in points_list]
     all_y = [p.y for p in points_list]
     x_min, x_max = min(all_x), max(all_x)
     y_min, y_max = min(all_y), max(all_y)
-    ax.set_xlim(x_min - 1, x_max + 1)  # Add some padding
-    ax.set_ylim(y_min - 1, y_max + 1)  # Add some padding
+    ax.set_xlim(x_min - 1, x_max + 1)
+    ax.set_ylim(y_min - 1, y_max + 1)
 
-    start = time.time()
-    try:
-        if method_var.get() == 1: 
-            if len(points_list) != 3:
-                raise ValueError("Brute force method requires exactly 3 points.")
-            bezier_points = generate_bezier_bruteforce(points_list[0], points_list[1], points_list[2], iterations)
-        else: 
-            bezier_points = generate_bezier_dnc_n_curve(start_point,control_points,end_point ,iterations)
-
-    except ValueError as e:
-        messagebox.showerror("Error", str(e))
-        return
-    end = time.time()
-    execution_time = int((end - start) * 1000) 
-    execution_time_var.set(f"Execution time : {execution_time :} ms")
- 
-    # Extract x and y coordinates from points
-    x_points = [point.x for point in bezier_points]
-    y_points = [point.y for point in bezier_points]
     bezier_line, = ax.plot([], [], 'b-', label='Bezier Curve', lw=2, marker='o', markersize=5)
-
-    # Plot initial control points and lines
-    x_control = [p.x for p in [start_point] + control_points + [end_point]]
-    y_control = [p.y for p in [start_point] + control_points + [end_point]]
-    control_line, = ax.plot(x_control, y_control, 'ro--', label='Control Points', lw=1)
-
-    bezier_line, = ax.plot([], [], 'b-', lw=2, marker='o', markersize=5)
 
     def init():
         bezier_line.set_data([], [])
         return bezier_line,
 
-    def animate(i):
+    def animate_bruteforce(i):
         if i < len(x_points):
-            x = x_points[:i+1]
-            y = y_points[:i+1]
+            x = x_points[:i + 1]
+            y = y_points[:i + 1]
             bezier_line.set_data(x, y)
         return bezier_line,
 
-    ani = FuncAnimation(fig, animate, init_func=init, frames=len(x_points) + 1, interval=500, blit=True)
+    def animate_dnc(i):
+        if i < len(point_each_iteration):
+            current_control_points = point_each_iteration[i]
+            x = [p.x for p in current_control_points]
+            y = [p.y for p in current_control_points]
+            bezier_line.set_data(x, y)
+        else:
+            bezier_line.set_data(x_points, y_points)
+        return bezier_line,
+
+    start = time.time()
+    try:
+        if method_var.get() == 1:
+            if len(points_list) != 3:
+                raise ValueError("Brute force method requires exactly 3 points.")
+            bezier_points = generate_bezier_bruteforce(start_point, control_points[0], end_point, iterations)
+            x_points = [point.x for point in bezier_points]
+            y_points = [point.y for point in bezier_points]
+            ani = FuncAnimation(fig, animate_bruteforce, init_func=init, frames=len(x_points), interval=800, blit=True, repeat=False)
+        else:
+            bezier_points, point_each_iteration = generate_bezier_dnc_n_curve(start_point, control_points, end_point, iterations)
+            ani = FuncAnimation(fig, animate_dnc, init_func=init, frames=len(point_each_iteration) + 1, interval=800, blit=True, repeat=False)
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+        return
+    end = time.time()
+    execution_time = round((end - start) * 1000, 2)
+    execution_time_var.set(f"Execution time: {execution_time:.2f} ms")
+
+    x_control = [p.x for p in [start_point] + control_points + [end_point]]
+    y_control = [p.y for p in [start_point] + control_points + [end_point]]
+    control_line, = ax.plot(x_control, y_control, 'ro--', label='Control Points', lw=1)
+
     window.ani = ani
     canvas.draw()
     ax.legend()
-    placeholder_text.set_visible(False)
-
 
 # Main application window
 window = Tk()
