@@ -10,7 +10,7 @@ def close_window(event=None):
     window.destroy()
 
 def generate_button():
-    global ani, execution_time_var, ax, canvas, bezier_line
+    global ani, execution_time_var, ax, canvas, bezier_line, control_line
 
     try:
         num_points = int(number_of_points.get())
@@ -55,10 +55,16 @@ def generate_button():
     ax.set_ylim(y_min - 1, y_max + 1)
 
     bezier_line, = ax.plot([], [], 'b-', label='Bezier Curve', lw=2, marker='o', markersize=5)
-
+    
+    lines = []
     def init():
-        bezier_line.set_data([], [])
-        return bezier_line,
+        global control_line, bezier_line  # Ensure these are the global references being updated
+        lines.clear()  # Clear any existing lines from the list
+        control_line, = ax.plot([], [], 'ro--', label='Control Points', lw=1)
+        bezier_line, = ax.plot([], [], 'b-', label='Bezier Curve', lw=2, marker='o', markersize=5)
+        lines.append(control_line)
+        lines.append(bezier_line)
+        return lines
 
     def animate_bruteforce(i):
         if i < len(x_points):
@@ -67,15 +73,9 @@ def generate_button():
             bezier_line.set_data(x, y)
         return bezier_line,
 
-    def animate_dnc(i):
-        if i < len(point_each_iteration):
-            current_control_points = point_each_iteration[i]
-            x = [p.x for p in current_control_points]
-            y = [p.y for p in current_control_points]
-            bezier_line.set_data(x, y)
-        else:
-            bezier_line.set_data(x_points, y_points)
-        return bezier_line,
+    x_control = [p.x for p in [start_point] + control_points + [end_point]]
+    y_control = [p.y for p in [start_point] + control_points + [end_point]]
+    control_line, = ax.plot([], [], 'ro--', label='Control Points', lw=1)
 
     start = time.time()
     try:
@@ -87,22 +87,46 @@ def generate_button():
             y_points = [point.y for point in bezier_points]
             ani = FuncAnimation(fig, animate_bruteforce, init_func=init, frames=len(x_points), interval=800, blit=True, repeat=False)
         else:
-            bezier_points, point_each_iteration = generate_bezier_dnc_n_curve(start_point, control_points, end_point, iterations)
-            ani = FuncAnimation(fig, animate_dnc, init_func=init, frames=len(point_each_iteration) + 1, interval=800, blit=True, repeat=False)
+            control_line.set_data(x_control, y_control)
+            bezier_line.set_data([], [])
+            intermediate_lines = []
+            def animate_dnc(i):
+                nonlocal intermediate_lines
+
+                # Remove previous intermediate lines
+                for line in intermediate_lines:
+                    line.remove()
+                intermediate_lines = []
+
+                # Draw all points from the current iteration
+                current_points = all_iterations_points[i]
+
+                x = [p.x for p in current_points]
+                y = [p.y for p in current_points]
+                line, = ax.plot(x, y, 'b--', lw=1, marker='o', markersize=5)  # Add markers for points
+                intermediate_lines.append(line)
+
+                # For the last iteration, change the line to a solid blue line
+                if i == len(all_iterations_points) - 1:
+                    line.set_color('b')
+                    line.set_linestyle('-')
+                    line.set_linewidth(2)
+
+                return intermediate_lines
+
+            all_iterations_points = generate_bezier_dnc_n_curve(start_point, control_points, end_point, iterations)
+            ani = FuncAnimation(fig, animate_dnc, init_func=init, frames=len(all_iterations_points) + 1, interval=800, blit=True, repeat=False)
     except ValueError as e:
         messagebox.showerror("Error", str(e))
         return
     end = time.time()
-    execution_time = round((end - start) * 1000, 2)
+    execution_time = ((end - start) * 1000)
     execution_time_var.set(f"Execution time: {execution_time:.2f} ms")
 
-    x_control = [p.x for p in [start_point] + control_points + [end_point]]
-    y_control = [p.y for p in [start_point] + control_points + [end_point]]
-    control_line, = ax.plot(x_control, y_control, 'ro--', label='Control Points', lw=1)
-
+    control_line.set_data(x_control, y_control)
+    ax.legend(handles=[control_line, bezier_line], loc='best')
     window.ani = ani
     canvas.draw()
-    ax.legend()
 
 # Main application window
 window = Tk()

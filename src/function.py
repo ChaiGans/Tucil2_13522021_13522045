@@ -34,7 +34,6 @@ def dnc_n_curve(control_points, depth, max_depth, points_list, point_list_of_eve
         # Append the first and last midpoints to the left and right lists, respectively
         middle_point_useful_left.append(middle_of_middle_point[0])
         middle_point_useful_right.insert(0, middle_of_middle_point[-1])
-        
         # Calculate the successive midpoints until only one or two points remain
         while len(middle_of_middle_point) > 2:
             middle_of_middle_point = [find_midpoint(middle_of_middle_point[i], middle_of_middle_point[i + 1]) for i in range(len(middle_of_middle_point) - 1)]
@@ -55,10 +54,12 @@ def dnc_n_curve(control_points, depth, max_depth, points_list, point_list_of_eve
         points_list.append(new_middle_point)
         dnc_n_curve(middle_point_useful_right, depth + 1, max_depth, points_list, point_list_of_every_iteration)    
 
-def generate_bezier_dnc_n_curve(start_point, control_points, end_point, iterations):
-    bezier_curve_points = []
-    point_each_iteration = []
-    dnc_n_curve([start_point] + control_points + [end_point], 0, iterations, bezier_curve_points, point_each_iteration)
-    point_each_iteration.append([start_point] + bezier_curve_points + [end_point])
-   
-    return [start_point] + bezier_curve_points + [end_point], point_each_iteration
+def generate_bezier_dnc_n_curve(start_point, control_points, end_point, max_iterations):
+    all_iterations_points = []
+    for iterations in range(1, max_iterations + 1):
+        bezier_curve_points = []
+        point_each_iteration = []
+        dnc_n_curve([start_point] + control_points + [end_point], 0, iterations, bezier_curve_points, point_each_iteration)
+        all_iterations_points.append([start_point] + bezier_curve_points + [end_point])
+        
+    return all_iterations_points
