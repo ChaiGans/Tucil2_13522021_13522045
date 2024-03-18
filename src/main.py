@@ -9,8 +9,15 @@ import time
 def close_window(event=None):
     window.destroy()
 
+animation_in_progress = False
 def generate_button():
-    global ani, execution_time_var, ax, canvas, bezier_line, control_line
+    global ani, execution_time_var, ax, canvas, bezier_line, control_line,animation_in_progress
+
+    if animation_in_progress:
+        messagebox.showerror("Error", "An animation is already in progress. Please wait until it finishes before starting a new one.")
+        return
+    
+    animation_in_progress = True
 
     try:
         num_points = int(number_of_points.get())
@@ -58,8 +65,8 @@ def generate_button():
     
     lines = []
     def init():
-        global control_line, bezier_line  # Ensure these are the global references being updated
-        lines.clear()  # Clear any existing lines from the list
+        global control_line, bezier_line  
+        lines.clear() 
         control_line, = ax.plot([], [], 'ro--', label='Control Points', lw=1)
         bezier_line, = ax.plot([], [], 'b-', label='Bezier Curve', lw=2, marker='o', markersize=5)
         lines.append(control_line)
@@ -67,61 +74,76 @@ def generate_button():
         return lines
 
     def animate_bruteforce(i):
+        global control_line, bezier_line, animation_in_progress
         if i < len(x_points):
             x = x_points[:i + 1]
             y = y_points[:i + 1]
             bezier_line.set_data(x, y)
-        return bezier_line,
+            control_line.set_data(x_control, y_control)
+
+        if i == len(x_points) - 1 :
+            animation_in_progress = False
+            
+        return bezier_line,control_line
 
     x_control = [p.x for p in [start_point] + control_points + [end_point]]
     y_control = [p.y for p in [start_point] + control_points + [end_point]]
-    control_line, = ax.plot([], [], 'ro--', label='Control Points', lw=1)
+    control_line, = ax.plot(x_control, y_control, 'ro--', label='Control Points', lw=1,markersize=5)
 
-    start = time.time()
+    exec_time = 0
     try:
         if method_var.get() == 1:
             if len(points_list) != 3:
                 raise ValueError("Brute force method requires exactly 3 points.")
+            
+            start_bf = time.time()
             bezier_points = generate_bezier_bruteforce(start_point, control_points[0], end_point, iterations)
+            end_bf = time.time()
+
+            exec_time = (end_bf - start_bf) * 1000
             x_points = [point.x for point in bezier_points]
             y_points = [point.y for point in bezier_points]
-            ani = FuncAnimation(fig, animate_bruteforce, init_func=init, frames=len(x_points), interval=800, blit=True, repeat=False)
+            ani = FuncAnimation(fig, animate_bruteforce, init_func=init, frames=len(x_points), interval=500, blit=True, repeat=False)
         else:
             control_line.set_data(x_control, y_control)
             bezier_line.set_data([], [])
             intermediate_lines = []
             def animate_dnc(i):
+                global animation_in_progress
                 nonlocal intermediate_lines
 
-                # Remove previous intermediate lines
                 for line in intermediate_lines:
                     line.remove()
                 intermediate_lines = []
 
-                # Draw all points from the current iteration
-                current_points = all_iterations_points[i]
+                if i < len(all_iterations_points):
+                    current_points = all_iterations_points[i]
 
-                x = [p.x for p in current_points]
-                y = [p.y for p in current_points]
-                line, = ax.plot(x, y, 'b--', lw=1, marker='o', markersize=5)  # Add markers for points
-                intermediate_lines.append(line)
+                    x = [p.x for p in current_points]
+                    y = [p.y for p in current_points]
+                    line, = ax.plot(x, y, 'b--', lw=1, marker='o', markersize=5)
+                    intermediate_lines.append(line)
 
-                # For the last iteration, change the line to a solid blue line
-                if i == len(all_iterations_points) - 1:
+                if i == len(all_iterations_points) - 1 or i == len(all_iterations_points):
+                    animation_in_progress = False
                     line.set_color('b')
                     line.set_linestyle('-')
                     line.set_linewidth(2)
 
                 return intermediate_lines
 
+            start_dnc = time.time()
             all_iterations_points = generate_bezier_dnc_n_curve(start_point, control_points, end_point, iterations)
-            ani = FuncAnimation(fig, animate_dnc, init_func=init, frames=len(all_iterations_points) + 1, interval=800, blit=True, repeat=False)
+            end_dnc = time.time()
+            exec_time = (end_dnc - start_dnc)*1000
+            
+            ani = FuncAnimation(fig, animate_dnc, init_func=init, frames=len(all_iterations_points), interval=500, blit=True, repeat=False)
     except ValueError as e:
         messagebox.showerror("Error", str(e))
+        animation_in_progress = False
         return
-    end = time.time()
-    execution_time = ((end - start) * 1000)
-    execution_time_var.set(f"Execution time: {execution_time:.2f} ms")
+    
+    execution_time_var.set(f"Execution time: {exec_time:.4f} ms")
 
     control_line.set_data(x_control, y_control)
     ax.legend(handles=[control_line, bezier_line], loc='best')
