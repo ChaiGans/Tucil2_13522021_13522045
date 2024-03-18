@@ -103,7 +103,7 @@ def generate_button():
             exec_time = (end_bf - start_bf) * 1000
             x_points = [point.x for point in bezier_points]
             y_points = [point.y for point in bezier_points]
-            ani = FuncAnimation(fig, animate_bruteforce, init_func=init, frames=len(x_points), interval=5, blit=True, repeat=False)
+            ani = FuncAnimation(fig, animate_bruteforce, init_func=init, frames=len(x_points), interval=500, blit=True, repeat=False)
         else:
             control_line.set_data(x_control, y_control)
             bezier_line.set_data([], [])
